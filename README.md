@@ -273,7 +273,7 @@ Full interactive docs at `/api/docs`. Summary:
 
 - `POST /api/auth/register`, `POST /api/auth/login`
 - `GET /api/rides/zones` — valid zone names
-- `POST /api/rides` (passenger) — request + auto-match a ride
+- `POST /api/rides` (passenger) — request a ride (attached to a candidate pool, waiting for driver acceptance)
 - `GET /api/rides`, `GET /api/rides/:id`, `POST /api/rides/:id/cancel` (passenger, own rides only)
 - `GET /api/driver/teslas`, `POST /api/driver/teslas/:id/online` (driver, own Teslas only)
 - `GET /api/driver/pools`, `POST /api/driver/pools/:id/status` (driver, own Teslas only)
@@ -302,7 +302,6 @@ Full interactive docs at `/api/docs`. Summary:
 
 - Real-time status via WebSockets/SSE instead of polling.
 - TeslaPay simulated wallet + ledger.
-- Driver-side accept/reject instead of auto-match-only.
 - Rating/review after `COMPLETED`.
 
 ## 18. Bonus — scaling to 1M passengers / 100k drivers
