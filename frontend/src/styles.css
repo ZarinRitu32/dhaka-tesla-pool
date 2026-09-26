@@ -1,0 +1,24 @@
+:root { font-family: system-ui, sans-serif; }
+body { margin: 0; background: #f4f6f8; color: #1b1f23; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; background: #101418; color: white; }
+.topbar a, .topbar .link-btn { color: white; text-decoration: none; margin-left: 18px; background: none; border: none; font: inherit; cursor: pointer; }
+.brand { font-weight: 700; font-size: 1.1rem; }
+.content { max-width: 760px; margin: 32px auto; padding: 0 16px; }
+.card { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 20px; }
+.card.narrow { max-width: 380px; }
+form label { display: block; margin-bottom: 12px; font-size: 0.9rem; color: #444; }
+form input, form select { display: block; width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+button { background: #e11d2e; color: white; border: none; padding: 9px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+button:disabled { opacity: 0.6; cursor: default; }
+.error { color: #c0392b; }
+.success { color: #1e8449; }
+.hint { font-size: 0.8rem; color: #666; }
+table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+.status { padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; background: #eee; }
+.status-completed { background: #d4edda; }
+.status-cancelled { background: #f8d7da; }
+.status-started, .status-driver_arrived { background: #fff3cd; }
+.pool-card { border: 1px solid #eee; border-radius: 8px; padding: 12px; margin-top: 10px; }
+.pool-header { margin-bottom: 6px; }
+.row { display: flex; gap: 10px; align-items: center; margin: 6px 0; }

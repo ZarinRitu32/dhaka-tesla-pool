@@ -1,0 +1,117 @@
+// Dhaka Tesla Pool - Prisma schema
+// DB: PostgreSQL. Money stored as INTEGER poysha (1 taka = 100 poysha) to avoid float rounding errors.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PASSENGER
+  DRIVER
+}
+
+enum RideStatus {
+  REQUESTED
+  MATCHED
+  DRIVER_ARRIVED
+  STARTED
+  COMPLETED
+  CANCELLED
+}
+
+// A user can be a passenger, a driver, or (in this MVP) both — role governs which
+// endpoints they can call. Kept as one table instead of two to avoid duplicating
+// auth/profile fields; Tesla ownership is what actually makes someone a driver.
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+
+  teslas        Tesla[]
+  rideRequests  RideRequest[]
+  poolMemberships PoolMembership[]
+}
+
+model Tesla {
+  id           String   @id @default(uuid())
+  driver       User     @relation(fields: [driverId], references: [id])
+  driverId     String
+  name         String   // e.g. "Bullet"
+  capacity     Int      // fixed seat count, e.g. 3
+  isOnline     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  pools        Pool[]
+}
+
+// One Pool = one physical trip on one Tesla, which may carry 1..N pooled RideRequests
+// as long as combined seats <= tesla.capacity. A ride with no pooling is still a Pool
+// of size one — this keeps the state machine and seat-accounting logic in one place.
+model Pool {
+  id             String     @id @default(uuid())
+  tesla          Tesla      @relation(fields: [teslaId], references: [id])
+  teslaId        String
+  status         RideStatus @default(REQUESTED)
+  seatsOccupied  Int        @default(0)
+  matchZone      String     // pickup zone used for the simple matching rule
+  createdAt      DateTime   @default(now())
+  matchedAt      DateTime?
+  arrivedAt      DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  version        Int        @default(0) // optimistic-locking guard, belt-and-braces on top of the atomic seat UPDATE
+
+  members        PoolMembership[]
+  history        RideEvent[]
+}
+
+// Join table between a RideRequest and the Pool it ended up in. Exists as its own
+// table (not just a poolId FK on RideRequest) so a request's fare/status is scoped
+// to its own membership row — a passenger only ever queries their own membership.
+model PoolMembership {
+  id            String   @id @default(uuid())
+  pool          Pool     @relation(fields: [poolId], references: [id])
+  poolId        String
+  rideRequest   RideRequest @relation(fields: [rideRequestId], references: [id])
+  rideRequestId String   @unique
+  passenger     User     @relation(fields: [passengerId], references: [id])
+  passengerId   String
+  seats         Int
+  fareInPoysha  Int      // this passenger's own fare, never another passenger's
+  joinedAt      DateTime @default(now())
+}
+
+model RideRequest {
+  id           String     @id @default(uuid())
+  passenger    User       @relation(fields: [passengerId], references: [id])
+  passengerId  String
+  pickupZone   String
+  destZone     String
+  seats        Int
+  status       RideStatus @default(REQUESTED)
+  estimatedFare Int
+  createdAt    DateTime   @default(now())
+  cancelledAt  DateTime?
+
+  membership   PoolMembership?
+}
+
+// Append-only audit trail — "hold onto enough history to explain exactly what happened".
+model RideEvent {
+  id        String   @id @default(uuid())
+  pool      Pool     @relation(fields: [poolId], references: [id])
+  poolId    String
+  event     String   // e.g. "REQUEST_JOINED", "STATUS_CHANGED:MATCHED", "DRIVER_ARRIVED"
+  actorId   String?
+  payload   Json?
+  createdAt DateTime @default(now())
+}
