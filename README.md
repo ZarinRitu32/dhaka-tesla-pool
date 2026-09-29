@@ -133,10 +133,10 @@ poolDiscount   = isPooled ? round(distanceCharge * 20%) : 0
 **Worked example** — Nusrat, Banani → Mohakhali, pooled with Rafiq:
 
 ```
-distanceKm(Banani, Mohakhali) ≈ 1.7 km
-distanceCharge = 1500 × 1.7            = 2550 poysha
-poolDiscount   = 2550 × 20%            =  510 poysha
-fare           = 3000 + 2550 - 510     = 5040 poysha = ৳50.40
+distanceKm(Banani, Mohakhali) = 1.6 km
+distanceCharge = 1500 × 1.6            = 2400 poysha
+poolDiscount   = 2400 × 20%            =  480 poysha
+fare           = 3000 + 2400 - 480     = 4920 poysha = ৳49.20
 ```
 
 An evaluator can reproduce this by hand from `src/utils/zones.js`'s lat/long table and the

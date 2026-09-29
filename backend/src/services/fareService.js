@@ -16,10 +16,10 @@ const POOL_DISCOUNT_PCT = 20;       // 20% off the distance charge when pooled w
  *                  the pool has more than one distinct passenger.
  *
  * Worked example (Nusrat, Banani -> Mohakhali, pooled with Rafiq):
- *   distanceKm(Banani, Mohakhali) ≈ 1.7 km
- *   distanceCharge = 1500 * 1.7 = 2550 poysha
- *   poolDiscount   = 2550 * 20 / 100 = 510 poysha
- *   fare           = 3000 + 2550 - 510 = 5040 poysha = 50.40 Taka
+ *   distanceKm(Banani, Mohakhali) = 1.6 km
+ *   distanceCharge = 1500 * 1.6 = 2400 poysha
+ *   poolDiscount   = 2400 * 20 / 100 = 480 poysha
+ *   fare           = 3000 + 2400 - 480 = 4920 poysha = 49.20 Taka
  */
 function calculateFare({ pickupZone, destZone, isPooled }) {
   const km = distanceKm(pickupZone, destZone);
