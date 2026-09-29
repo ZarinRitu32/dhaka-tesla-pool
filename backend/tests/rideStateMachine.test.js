@@ -17,6 +17,12 @@ describe("ride state machine", () => {
     expect(() => assertValidTransition("STARTED", "CANCELLED")).toThrow();
   });
 
+  test("allows cancelling from pre-started states", () => {
+    expect(() => assertValidTransition("REQUESTED", "CANCELLED")).not.toThrow();
+    expect(() => assertValidTransition("MATCHED", "CANCELLED")).not.toThrow();
+    expect(() => assertValidTransition("DRIVER_ARRIVED", "CANCELLED")).not.toThrow();
+  });
+
   test("rejects any transition out of a terminal state", () => {
     expect(() => assertValidTransition("COMPLETED", "CANCELLED")).toThrow();
     expect(() => assertValidTransition("CANCELLED", "MATCHED")).toThrow();

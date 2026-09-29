@@ -252,11 +252,7 @@ async function cancelRideRequest(rideRequestId, passengerId) {
       err.status = 403;
       throw err;
     }
-    if (!["REQUESTED", "MATCHED", "DRIVER_ARRIVED"].includes(rr.status)) {
-      const err = new Error(`Cannot cancel a ride in status ${rr.status}`);
-      err.status = 409;
-      throw err;
-    }
+    assertValidTransition(rr.status, "CANCELLED");
 
     await tx.rideRequest.update({
       where: { id: rideRequestId },
