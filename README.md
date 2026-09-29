@@ -245,16 +245,29 @@ npm run dev                 # http://localhost:5173
 
 ```bash
 cd backend
-npm test                    # fare + state-machine unit tests (no DB needed)
+npm test                    # fare, state-machine, and pool capacity concurrency unit tests (no DB needed)
 DATABASE_URL=... npm test   # also runs the concurrency integration test against a real Postgres
 ```
 
-Covers: Bullet's capacity can never be exceeded (concurrency test); invalid state transitions are
+Covers: Bullet's capacity can never be exceeded (concurrency unit & DB integration tests); invalid state transitions are
 rejected (`rideStateMachine.test.js`); Nusrat/Rafiq's pooled fares calculate correctly
 (`fareService.test.js`); ownership checks (`getRide`/`myPools` only ever return the caller's own
 data — enforced in the controllers, exercised via the routes) and cancellation rules
 (`cancelRideRequest` rejects cancelling a `STARTED` ride) live in the same services and are
 covered by the state-machine tests above plus manual verification via Swagger.
+
+## 12.1 Git Workflow & Branching Strategy
+
+- **Long-Lived Branches**:
+  - `master`: Primary development and integration branch
+  - `pre-release`: Stabilization and pre-release verification branch
+  - `release/v1.0.0`: Production-ready release branch
+- **Feature Branches**:
+  - `feature/*` (e.g., `feature/prd-compliance`, `feature/testing`, `feature/ride-lifecycle`)
+- **Workflow**:
+  - `feature branch` → `master` → `pre-release` → `release/v1.0.0`
+- **Commit Convention**:
+  - Follows `type(scope): description` format (e.g. `feat(pool): enforce seat capacity`, `test(pool): add last seat concurrency test`, `fix(ride): validate ride state transitions`, `docs(readme): update setup instructions`).
 
 ## 13. Demo credentials
 
