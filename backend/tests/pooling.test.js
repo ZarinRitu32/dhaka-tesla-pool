@@ -10,7 +10,11 @@ const {
 describe("Pooling, Matching Rules and Fare Calculation", () => {
   describe("Matching Rules (isPoolCompatible)", () => {
     test("Banani -> Mohakhali and Banani -> Gulshan1 are compatible (same pickup, spread <= 3km)", () => {
-      const reqNusrat = { pickupZone: "Banani", destZone: "Mohakhali", seats: 1 };
+      const reqNusrat = {
+        pickupZone: "Banani",
+        destZone: "Mohakhali",
+        seats: 1,
+      };
       const reqRafiq = { pickupZone: "Banani", destZone: "Gulshan1", seats: 1 };
 
       const spread = distanceKm(reqNusrat.destZone, reqRafiq.destZone);
@@ -50,7 +54,9 @@ describe("Pooling, Matching Rules and Fare Calculation", () => {
       });
 
       expect(fare.poolDiscountPoysha).toBe(0);
-      expect(fare.farePoysha).toBe(fare.baseFarePoysha + fare.distanceChargePoysha);
+      expect(fare.farePoysha).toBe(
+        fare.baseFarePoysha + fare.distanceChargePoysha,
+      );
       expect(Number.isInteger(fare.farePoysha)).toBe(true);
     });
 
@@ -78,8 +84,16 @@ describe("Pooling, Matching Rules and Fare Calculation", () => {
       for (const from of zones) {
         for (const to of zones) {
           if (from === to) continue;
-          const solo = calculateFare({ pickupZone: from, destZone: to, isPooled: false });
-          const pooled = calculateFare({ pickupZone: from, destZone: to, isPooled: true });
+          const solo = calculateFare({
+            pickupZone: from,
+            destZone: to,
+            isPooled: false,
+          });
+          const pooled = calculateFare({
+            pickupZone: from,
+            destZone: to,
+            isPooled: true,
+          });
 
           expect(Number.isInteger(solo.farePoysha)).toBe(true);
           expect(Number.isInteger(pooled.farePoysha)).toBe(true);

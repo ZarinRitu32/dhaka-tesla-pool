@@ -83,18 +83,20 @@ describe("Authorization and User Isolation", () => {
     });
 
     test("passenger cannot cancel another passenger's ride (403)", async () => {
-      jest.spyOn(prisma, "$transaction").mockImplementation(async (callback) => {
-        return callback({
-          rideRequest: {
-            findUnique: jest.fn().mockResolvedValue({
-              id: "ride-1",
-              passengerId: "passenger-2", // belongs to Rafiq
-              status: "REQUESTED",
-              membership: null,
-            }),
-          },
+      jest
+        .spyOn(prisma, "$transaction")
+        .mockImplementation(async (callback) => {
+          return callback({
+            rideRequest: {
+              findUnique: jest.fn().mockResolvedValue({
+                id: "ride-1",
+                passengerId: "passenger-2", // belongs to Rafiq
+                status: "REQUESTED",
+                membership: null,
+              }),
+            },
+          });
         });
-      });
 
       const res = await request(app)
         .post("/api/rides/ride-1/cancel")
@@ -123,17 +125,19 @@ describe("Authorization and User Isolation", () => {
     });
 
     test("driver cannot transition a pool belonging to another driver's Tesla (403)", async () => {
-      jest.spyOn(prisma, "$transaction").mockImplementation(async (callback) => {
-        return callback({
-          pool: {
-            findUnique: jest.fn().mockResolvedValue({
-              id: "pool-1",
-              tesla: { driverId: "driver-1" }, // belongs to Jashim
-              status: "REQUESTED",
-            }),
-          },
+      jest
+        .spyOn(prisma, "$transaction")
+        .mockImplementation(async (callback) => {
+          return callback({
+            pool: {
+              findUnique: jest.fn().mockResolvedValue({
+                id: "pool-1",
+                tesla: { driverId: "driver-1" }, // belongs to Jashim
+                status: "REQUESTED",
+              }),
+            },
+          });
         });
-      });
 
       const res = await request(app)
         .post("/api/driver/pools/pool-1/status")

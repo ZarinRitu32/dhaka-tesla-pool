@@ -8,15 +8,23 @@ describe("Ride Lifecycle and Cancellation State Machine", () => {
   describe("State Transition Validation", () => {
     test("allows standard forward ride progression", () => {
       expect(() => assertValidTransition("REQUESTED", "MATCHED")).not.toThrow();
-      expect(() => assertValidTransition("MATCHED", "DRIVER_ARRIVED")).not.toThrow();
-      expect(() => assertValidTransition("DRIVER_ARRIVED", "STARTED")).not.toThrow();
+      expect(() =>
+        assertValidTransition("MATCHED", "DRIVER_ARRIVED"),
+      ).not.toThrow();
+      expect(() =>
+        assertValidTransition("DRIVER_ARRIVED", "STARTED"),
+      ).not.toThrow();
       expect(() => assertValidTransition("STARTED", "COMPLETED")).not.toThrow();
     });
 
     test("allows cancellation only from pre-started states", () => {
-      expect(() => assertValidTransition("REQUESTED", "CANCELLED")).not.toThrow();
+      expect(() =>
+        assertValidTransition("REQUESTED", "CANCELLED"),
+      ).not.toThrow();
       expect(() => assertValidTransition("MATCHED", "CANCELLED")).not.toThrow();
-      expect(() => assertValidTransition("DRIVER_ARRIVED", "CANCELLED")).not.toThrow();
+      expect(() =>
+        assertValidTransition("DRIVER_ARRIVED", "CANCELLED"),
+      ).not.toThrow();
     });
 
     test("rejects invalid skipping of states", () => {
@@ -48,7 +56,9 @@ describe("Ride Lifecycle and Cancellation State Machine", () => {
       const mockTx = {
         pool: {
           findUnique: jest.fn().mockResolvedValue(mockPool),
-          update: jest.fn().mockResolvedValue({ id: "pool-1", status: "MATCHED" }),
+          update: jest
+            .fn()
+            .mockResolvedValue({ id: "pool-1", status: "MATCHED" }),
         },
         rideRequest: {
           updateMany: jest.fn().mockResolvedValue({ count: 1 }),
@@ -59,9 +69,15 @@ describe("Ride Lifecycle and Cancellation State Machine", () => {
       };
 
       const prisma = require("../src/config/db");
-      jest.spyOn(prisma, "$transaction").mockImplementation(async (cb) => cb(mockTx));
+      jest
+        .spyOn(prisma, "$transaction")
+        .mockImplementation(async (cb) => cb(mockTx));
 
-      const updated = await transitionPoolStatus("pool-1", "driver-jashim", "MATCHED");
+      const updated = await transitionPoolStatus(
+        "pool-1",
+        "driver-jashim",
+        "MATCHED",
+      );
 
       expect(updated.status).toBe("MATCHED");
       expect(mockTx.pool.update).toHaveBeenCalledWith(
@@ -100,7 +116,9 @@ describe("Ride Lifecycle and Cancellation State Machine", () => {
       const mockTx = {
         rideRequest: {
           findUnique: jest.fn().mockResolvedValue(mockRideRequest),
-          update: jest.fn().mockResolvedValue({ id: "rr-1", status: "CANCELLED" }),
+          update: jest
+            .fn()
+            .mockResolvedValue({ id: "rr-1", status: "CANCELLED" }),
         },
         pool: {
           update: jest.fn().mockResolvedValue({ id: "pool-1" }),
@@ -111,7 +129,9 @@ describe("Ride Lifecycle and Cancellation State Machine", () => {
       };
 
       const prisma = require("../src/config/db");
-      jest.spyOn(prisma, "$transaction").mockImplementation(async (cb) => cb(mockTx));
+      jest
+        .spyOn(prisma, "$transaction")
+        .mockImplementation(async (cb) => cb(mockTx));
 
       const cancelled = await cancelRideRequest("rr-1", "passenger-nusrat");
 
@@ -154,11 +174,13 @@ describe("Ride Lifecycle and Cancellation State Machine", () => {
       };
 
       const prisma = require("../src/config/db");
-      jest.spyOn(prisma, "$transaction").mockImplementation(async (cb) => cb(mockTx));
+      jest
+        .spyOn(prisma, "$transaction")
+        .mockImplementation(async (cb) => cb(mockTx));
 
-      await expect(cancelRideRequest("rr-1", "passenger-nusrat")).rejects.toThrow(
-        /Invalid ride state transition: STARTED -> CANCELLED/,
-      );
+      await expect(
+        cancelRideRequest("rr-1", "passenger-nusrat"),
+      ).rejects.toThrow(/Invalid ride state transition: STARTED -> CANCELLED/);
     });
   });
 });

@@ -5,9 +5,9 @@ const { distanceKm } = require("../utils/zones");
 // anything billed to a passenger, and integer poysha keeps every arithmetic step
 // exact while still allowing sub-taka precision when discounts are applied.
 
-const BASE_FARE_POYSHA = 3000;      // 30 Taka flat base
-const PER_KM_POYSHA = 1500;         // 15 Taka / km
-const POOL_DISCOUNT_PCT = 20;       // 20% off the distance charge when pooled with >=1 other passenger
+const BASE_FARE_POYSHA = 3000; // 30 Taka flat base
+const PER_KM_POYSHA = 1500; // 15 Taka / km
+const POOL_DISCOUNT_PCT = 20; // 20% off the distance charge when pooled with >=1 other passenger
 
 /**
  * passengerFare = baseFare + distanceCharge - poolDiscount
@@ -24,7 +24,9 @@ const POOL_DISCOUNT_PCT = 20;       // 20% off the distance charge when pooled w
 function calculateFare({ pickupZone, destZone, isPooled }) {
   const km = distanceKm(pickupZone, destZone);
   const distanceCharge = Math.round(PER_KM_POYSHA * km);
-  const poolDiscount = isPooled ? Math.round((distanceCharge * POOL_DISCOUNT_PCT) / 100) : 0;
+  const poolDiscount = isPooled
+    ? Math.round((distanceCharge * POOL_DISCOUNT_PCT) / 100)
+    : 0;
   const fare = BASE_FARE_POYSHA + distanceCharge - poolDiscount;
   return {
     km,
@@ -39,4 +41,10 @@ function poyshaToTakaDisplay(poysha) {
   return `৳${(poysha / 100).toFixed(2)}`;
 }
 
-module.exports = { calculateFare, poyshaToTakaDisplay, BASE_FARE_POYSHA, PER_KM_POYSHA, POOL_DISCOUNT_PCT };
+module.exports = {
+  calculateFare,
+  poyshaToTakaDisplay,
+  BASE_FARE_POYSHA,
+  PER_KM_POYSHA,
+  POOL_DISCOUNT_PCT,
+};

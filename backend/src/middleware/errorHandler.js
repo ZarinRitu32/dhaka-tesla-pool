@@ -15,5 +15,7 @@ module.exports = function errorHandler(err, req, res, next) {
     // eslint-disable-next-line no-console
     console.error(err);
   }
-  return res.status(status).json({ error: err.message || "Internal server error" });
+  return res
+    .status(status)
+    .json({ error: err.message || "Internal server error" });
 };

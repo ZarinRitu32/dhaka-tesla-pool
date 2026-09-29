@@ -24,14 +24,12 @@ describe("Authentication & Authorization - /api/auth", () => {
       jest.spyOn(prisma.user, "create").mockResolvedValue(mockCreatedUser);
       const hashSpy = jest.spyOn(bcrypt, "hash");
 
-      const res = await request(app)
-        .post("/api/auth/register")
-        .send({
-          name: "Test Passenger",
-          email: "test_passenger@teslapool.dev",
-          password: "securepassword",
-          role: "PASSENGER",
-        });
+      const res = await request(app).post("/api/auth/register").send({
+        name: "Test Passenger",
+        email: "test_passenger@teslapool.dev",
+        password: "securepassword",
+        role: "PASSENGER",
+      });
 
       expect(res.status).toBe(201);
       expect(res.body).toEqual({
@@ -55,14 +53,12 @@ describe("Authentication & Authorization - /api/auth", () => {
       jest.spyOn(prisma.user, "findUnique").mockResolvedValue(null);
       jest.spyOn(prisma.user, "create").mockResolvedValue(mockCreatedDriver);
 
-      const res = await request(app)
-        .post("/api/auth/register")
-        .send({
-          name: "Test Driver",
-          email: "driver@teslapool.dev",
-          password: "driverpassword",
-          role: "DRIVER",
-        });
+      const res = await request(app).post("/api/auth/register").send({
+        name: "Test Driver",
+        email: "driver@teslapool.dev",
+        password: "driverpassword",
+        role: "DRIVER",
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.role).toBe("DRIVER");
@@ -74,28 +70,24 @@ describe("Authentication & Authorization - /api/auth", () => {
         email: "duplicate@teslapool.dev",
       });
 
-      const res = await request(app)
-        .post("/api/auth/register")
-        .send({
-          name: "Duplicate User",
-          email: "duplicate@teslapool.dev",
-          password: "password123",
-          role: "PASSENGER",
-        });
+      const res = await request(app).post("/api/auth/register").send({
+        name: "Duplicate User",
+        email: "duplicate@teslapool.dev",
+        password: "password123",
+        role: "PASSENGER",
+      });
 
       expect(res.status).toBe(409);
       expect(res.body.error).toMatch(/already registered/i);
     });
 
     test("validates registration input schema (rejects short password / invalid email)", async () => {
-      const res = await request(app)
-        .post("/api/auth/register")
-        .send({
-          name: "Bad Input",
-          email: "not-an-email",
-          password: "123", // too short (< 6 chars)
-          role: "INVALID_ROLE",
-        });
+      const res = await request(app).post("/api/auth/register").send({
+        name: "Bad Input",
+        email: "not-an-email",
+        password: "123", // too short (< 6 chars)
+        role: "INVALID_ROLE",
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBeDefined();
