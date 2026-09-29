@@ -21,6 +21,9 @@ const { assertValidTransition } = require("./rideStateMachine");
  * infrastructure.
  */
 async function reserveSeatsAtomically(poolId, seats, capacity) {
+  if (!seats || seats < 1 || seats > capacity) {
+    return false;
+  }
   const rows = await prisma.$queryRawUnsafe(
     `UPDATE "Pool"
      SET "seatsOccupied" = "seatsOccupied" + $1, "version" = "version" + 1
@@ -70,6 +73,12 @@ async function findAvailableTesla(excludeTeslaIds = []) {
  * pool discount as soon as a second rider joins.
  */
 async function matchRideRequest(rideRequest) {
+  if (!rideRequest.seats || rideRequest.seats < 1) {
+    const err = new Error("Invalid seats requested: must be at least 1");
+    err.status = 400;
+    throw err;
+  }
+
   const failedPoolIds = [];
 
   // Try existing pools first, retrying on lost races (another request grabbed the seat).
@@ -96,6 +105,13 @@ async function matchRideRequest(rideRequest) {
   if (!tesla) {
     const err = new Error("No online Tesla available right now");
     err.status = 503;
+    throw err;
+  }
+  if (rideRequest.seats > tesla.capacity) {
+    const err = new Error(
+      `Requested seats (${rideRequest.seats}) exceed vehicle capacity (${tesla.capacity})`,
+    );
+    err.status = 400;
     throw err;
   }
 
