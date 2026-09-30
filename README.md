@@ -362,4 +362,4 @@ WHERE` statement rather than a `SELECT` followed by an `UPDATE` inside a transac
 
 ## 20. Demo video
 
-_Add your Loom/6-minute video link here before submission._
+- **Demo Video Walkthrough**: [Watch Demo Video (Google Drive)](https://drive.google.com/file/d/1iRApHxsuL0kM2Za8ZRML0qbbD8PYGhqX/view?usp=sharing)
