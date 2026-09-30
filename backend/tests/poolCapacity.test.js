@@ -49,9 +49,27 @@ describe("pool capacity and concurrency", () => {
       seatsOccupied: 3,
       tesla: { capacity: 3 },
       members: [
-        { rideRequest: { pickupZone: "Banani", destZone: "Mohakhali", status: "REQUESTED" } },
-        { rideRequest: { pickupZone: "Banani", destZone: "Gulshan1", status: "REQUESTED" } },
-        { rideRequest: { pickupZone: "Banani", destZone: "Mohakhali", status: "REQUESTED" } },
+        {
+          rideRequest: {
+            pickupZone: "Banani",
+            destZone: "Mohakhali",
+            status: "REQUESTED",
+          },
+        },
+        {
+          rideRequest: {
+            pickupZone: "Banani",
+            destZone: "Gulshan1",
+            status: "REQUESTED",
+          },
+        },
+        {
+          rideRequest: {
+            pickupZone: "Banani",
+            destZone: "Mohakhali",
+            status: "REQUESTED",
+          },
+        },
       ],
     };
 
