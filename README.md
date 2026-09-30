@@ -100,17 +100,17 @@ erDiagram
 
 ## 5. Tech stack & why (Section 7)
 
-| Layer | Choice | Realistic alternatives | Why this fits an MVP | When I'd switch |
-|---|---|---|---|---|
-| Frontend | React + Vite (plain SPA, `react-router-dom`) | Next.js (App Router) | No SSR/SEO need for an internal ride app; Vite's dev loop is faster to iterate a small demo UI | Next.js once there's marketing pages, SSR data needs, or a public landing site |
-| Backend | Node.js + Express | NestJS, Fastify | Express keeps the layering (routes/controllers/services) explicit and easy to explain line-by-line; no framework magic to defend in an interview | NestJS if the team needs enforced module boundaries and DI at larger scale |
-| DB | PostgreSQL | MySQL, SQLite | Relational + strong constraints fit seat-capacity/state-machine invariants; native `UPDATE ... WHERE` row locking is exactly what the concurrency problem (§12) needs | — already the right call for this domain |
-| ORM | Prisma | Sequelize, TypeORM, raw `pg` | Type-safe schema-as-code, `prisma migrate` gives a clean, inspectable migration history (Section 10 cares about history); raw SQL still reachable via `$queryRawUnsafe` for the one place it matters (atomic seat reservation) | Raw SQL/Knex if the query patterns got exotic enough that the ORM was fighting me |
-| Auth | JWT (`jsonwebtoken` + `bcryptjs`) | Session cookies, OAuth | Stateless, simple to demo via Swagger's bearer auth, no session store needed for an MVP | Cookie-based sessions + refresh tokens for a real production consumer app |
-| Validation | Zod | Joi, express-validator | Schema + inferred types in one place, minimal boilerplate | — |
-| API docs | swagger-jsdoc + swagger-ui-express | Postman collection only | Docs live next to the routes they describe and stay in sync; `/api/docs` is immediately explorable by an evaluator | A dedicated OpenAPI-first spec file if the API grew multi-team |
-| Testing | Jest + Supertest | Mocha/Chai, Vitest | One runner for unit + a DB-gated integration test proving the concurrency fix | — |
-| Deployment | Docker Compose (local/reproducible) | Railway/Render free tier | Section 6 requires `docker compose up` to work regardless of hosting; free-tier PaaS was evaluated but not required for this submission — see §9 | Any free-tier PaaS with a managed Postgres, once a public URL is needed |
+| Layer      | Choice                                       | Realistic alternatives       | Why this fits an MVP                                                                                                                                                                                                           | When I'd switch                                                                   |
+| ---------- | -------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Frontend   | React + Vite (plain SPA, `react-router-dom`) | Next.js (App Router)         | No SSR/SEO need for an internal ride app; Vite's dev loop is faster to iterate a small demo UI                                                                                                                                 | Next.js once there's marketing pages, SSR data needs, or a public landing site    |
+| Backend    | Node.js + Express                            | NestJS, Fastify              | Express keeps the layering (routes/controllers/services) explicit and easy to explain line-by-line; no framework magic to defend in an interview                                                                               | NestJS if the team needs enforced module boundaries and DI at larger scale        |
+| DB         | PostgreSQL                                   | MySQL, SQLite                | Relational + strong constraints fit seat-capacity/state-machine invariants; native `UPDATE ... WHERE` row locking is exactly what the concurrency problem (§12) needs                                                          | — already the right call for this domain                                          |
+| ORM        | Prisma                                       | Sequelize, TypeORM, raw `pg` | Type-safe schema-as-code, `prisma migrate` gives a clean, inspectable migration history (Section 10 cares about history); raw SQL still reachable via `$queryRawUnsafe` for the one place it matters (atomic seat reservation) | Raw SQL/Knex if the query patterns got exotic enough that the ORM was fighting me |
+| Auth       | JWT (`jsonwebtoken` + `bcryptjs`)            | Session cookies, OAuth       | Stateless, simple to demo via Swagger's bearer auth, no session store needed for an MVP                                                                                                                                        | Cookie-based sessions + refresh tokens for a real production consumer app         |
+| Validation | Zod                                          | Joi, express-validator       | Schema + inferred types in one place, minimal boilerplate                                                                                                                                                                      | —                                                                                 |
+| API docs   | swagger-jsdoc + swagger-ui-express           | Postman collection only      | Docs live next to the routes they describe and stay in sync; `/api/docs` is immediately explorable by an evaluator                                                                                                             | A dedicated OpenAPI-first spec file if the API grew multi-team                    |
+| Testing    | Jest + Supertest                             | Mocha/Chai, Vitest           | One runner for unit + a DB-gated integration test proving the concurrency fix                                                                                                                                                  | —                                                                                 |
+| Deployment | Docker Compose (local/reproducible)          | Railway/Render free tier     | Section 6 requires `docker compose up` to work regardless of hosting; free-tier PaaS was evaluated but not required for this submission — see §9                                                                               | Any free-tier PaaS with a managed Postgres, once a public URL is needed           |
 
 ## 6. Fare model (Section 5)
 
@@ -131,17 +131,19 @@ poolDiscount   = isPooled ? round(distanceCharge * 20%) : 0
   passengers
 
 **Worked example** — Nusrat, Banani → Mohakhali, pooled with Rafiq:
+
 ```
-distanceKm(Banani, Mohakhali) ≈ 1.7 km
-distanceCharge = 1500 × 1.7            = 2550 poysha
-poolDiscount   = 2550 × 20%            =  510 poysha
-fare           = 3000 + 2550 - 510     = 5040 poysha = ৳50.40
+distanceKm(Banani, Mohakhali) = 1.6 km
+distanceCharge = 1500 × 1.6            = 2400 poysha
+poolDiscount   = 2400 × 20%            =  480 poysha
+fare           = 3000 + 2400 - 480     = 4920 poysha = ৳49.20
 ```
+
 An evaluator can reproduce this by hand from `src/utils/zones.js`'s lat/long table and the
 formula above — no external map API involved.
 
 **Matching rule (Section 4)**: two ride requests are poolable in the same Tesla when they share
-the *exact same pickup zone* and their destination zones are within **3 km** (straight-line) of
+the _exact same pickup zone_ and their destination zones are within **3 km** (straight-line) of
 each other. Applied to the story: Nusrat and Rafiq both pick up in Banani, and
 Mohakhali↔Gulshan 1 is ≈1.1 km apart → poolable. Shirin, arriving 30s later for the last seat,
 either joins the same pool (if compatible and a seat is free) or triggers the concurrency path
@@ -245,27 +247,40 @@ npm run dev                 # http://localhost:5173
 
 ```bash
 cd backend
-npm test                    # fare + state-machine unit tests (no DB needed)
+npm test                    # fare, state-machine, and pool capacity concurrency unit tests (no DB needed)
 DATABASE_URL=... npm test   # also runs the concurrency integration test against a real Postgres
 ```
 
-Covers: Bullet's capacity can never be exceeded (concurrency test); invalid state transitions are
+Covers: Bullet's capacity can never be exceeded (concurrency unit & DB integration tests); invalid state transitions are
 rejected (`rideStateMachine.test.js`); Nusrat/Rafiq's pooled fares calculate correctly
 (`fareService.test.js`); ownership checks (`getRide`/`myPools` only ever return the caller's own
 data — enforced in the controllers, exercised via the routes) and cancellation rules
 (`cancelRideRequest` rejects cancelling a `STARTED` ride) live in the same services and are
 covered by the state-machine tests above plus manual verification via Swagger.
 
+## 12.1 Git Workflow & Branching Strategy
+
+- **Long-Lived Branches**:
+  - `master`: Primary development and integration branch
+  - `pre-release`: Stabilization and pre-release verification branch
+  - `release/v1.0.0`: Production-ready release branch
+- **Feature Branches**:
+  - `feature/*` (e.g., `feature/prd-compliance`, `feature/testing`, `feature/ride-lifecycle`)
+- **Workflow**:
+  - `feature branch` → `master` → `pre-release` → `release/v1.0.0`
+- **Commit Convention**:
+  - Follows `type(scope): description` format (e.g. `feat(pool): enforce seat capacity`, `test(pool): add last seat concurrency test`, `fix(ride): validate ride state transitions`, `docs(readme): update setup instructions`).
+
 ## 13. Demo credentials
 
 All seeded users share the password `password123`:
 
-| Name | Email | Role |
-|---|---|---|
+| Name   | Email                | Role                             |
+| ------ | -------------------- | -------------------------------- |
 | Jashim | jashim@teslapool.dev | DRIVER (owns Bullet, capacity 3) |
-| Nusrat | nusrat@teslapool.dev | PASSENGER |
-| Rafiq | rafiq@teslapool.dev | PASSENGER |
-| Shirin | shirin@teslapool.dev | PASSENGER |
+| Nusrat | nusrat@teslapool.dev | PASSENGER                        |
+| Rafiq  | rafiq@teslapool.dev  | PASSENGER                        |
+| Shirin | shirin@teslapool.dev | PASSENGER                        |
 
 ## 14. API overview
 
@@ -338,7 +353,7 @@ Not built (keeps the MVP honest to Section 3's scope), but reasoned through:
 - **Tools used**: Claude, for scaffolding the Express/Prisma project structure, the Swagger
   annotations, and drafting this README from the PRD.
 - **Accepted suggestion**: doing the seat check-and-increment as a single atomic `UPDATE ...
-  WHERE` statement rather than a `SELECT` followed by an `UPDATE` inside a transaction — simpler
+WHERE` statement rather than a `SELECT` followed by an `UPDATE` inside a transaction — simpler
   to reason about and to unit-test than manual row locking.
 - **Rejected/changed suggestion**: the first draft suggested storing fares as `Decimal`/float
   Taka amounts for readability. Rejected in favor of integer poysha end-to-end (see §6) to
@@ -347,4 +362,4 @@ Not built (keeps the MVP honest to Section 3's scope), but reasoned through:
 
 ## 20. Demo video
 
-_Add your Loom/6-minute video link here before submission._
+- **Demo Video Walkthrough**: [Watch Demo Video (Google Drive)](https://drive.google.com/file/d/1iRApHxsuL0kM2Za8ZRML0qbbD8PYGhqX/view?usp=sharing)
