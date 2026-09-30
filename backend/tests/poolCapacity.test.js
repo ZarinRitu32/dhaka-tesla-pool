@@ -37,4 +37,36 @@ describe("pool capacity and concurrency", () => {
     expect(successCount).toBe(1);
     expect(seatsOccupied).toBe(3);
   });
+
+  test("matchRideRequest rejects 4th passenger when 3-seat pool is full and no other Tesla is available", async () => {
+    const { matchRideRequest } = require("../src/services/poolService");
+
+    // Full pool: seatsOccupied = 3, capacity = 3
+    const fullPool = {
+      id: "pool-full",
+      matchZone: "Banani",
+      status: "REQUESTED",
+      seatsOccupied: 3,
+      tesla: { capacity: 3 },
+      members: [
+        { rideRequest: { pickupZone: "Banani", destZone: "Mohakhali", status: "REQUESTED" } },
+        { rideRequest: { pickupZone: "Banani", destZone: "Gulshan1", status: "REQUESTED" } },
+        { rideRequest: { pickupZone: "Banani", destZone: "Mohakhali", status: "REQUESTED" } },
+      ],
+    };
+
+    jest.spyOn(prisma.pool, "findMany").mockResolvedValue([fullPool]);
+    // No idle online Tesla available (Bullet is already running an active pool)
+    jest.spyOn(prisma.tesla, "findFirst").mockResolvedValue(null);
+
+    await expect(
+      matchRideRequest({
+        id: "req-4",
+        passengerId: "passenger-4",
+        pickupZone: "Banani",
+        destZone: "Mohakhali",
+        seats: 1,
+      }),
+    ).rejects.toThrow("No online Tesla available right now");
+  });
 });
