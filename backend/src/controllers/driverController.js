@@ -53,7 +53,10 @@ async function myPools(req, res) {
     orderBy: { createdAt: "desc" },
     include: {
       tesla: true,
-      members: { include: { passenger: true, rideRequest: true } },
+      members: {
+        where: { rideRequest: { status: { not: "CANCELLED" } } },
+        include: { passenger: true, rideRequest: true },
+      },
     },
   });
   res.json(pools.map(serializePoolForDriver));

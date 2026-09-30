@@ -44,7 +44,13 @@ async function reserveSeatsAtomically(poolId, seats, capacity) {
 async function findCompatibleOpenPool(rideRequest) {
   const openPools = await prisma.pool.findMany({
     where: { status: { in: ["REQUESTED", "MATCHED"] } },
-    include: { tesla: true, members: { include: { rideRequest: true } } },
+    include: {
+      tesla: true,
+      members: {
+        where: { rideRequest: { status: { not: "CANCELLED" } } },
+        include: { rideRequest: true },
+      },
+    },
   });
 
   for (const pool of openPools) {
@@ -61,7 +67,15 @@ async function findCompatibleOpenPool(rideRequest) {
 
 async function findAvailableTesla(excludeTeslaIds = []) {
   return prisma.tesla.findFirst({
-    where: { isOnline: true, id: { notIn: excludeTeslaIds } },
+    where: {
+      isOnline: true,
+      id: { notIn: excludeTeslaIds },
+      pools: {
+        none: {
+          status: { in: ["REQUESTED", "MATCHED", "DRIVER_ARRIVED", "STARTED"] },
+        },
+      },
+    },
   });
 }
 
@@ -142,10 +156,16 @@ async function attachToPool(poolId, rideRequest) {
   return prisma.$transaction(async (tx) => {
     const pool = await tx.pool.findUnique({
       where: { id: poolId },
-      include: { members: { include: { rideRequest: true } }, tesla: true },
+      include: {
+        members: {
+          where: { rideRequest: { status: { not: "CANCELLED" } } },
+          include: { rideRequest: true },
+        },
+        tesla: true,
+      },
     });
 
-    const isPooled = pool.members.length >= 1; // at least one other passenger already aboard
+    const isPooled = pool.members.length >= 1; // at least one other active passenger already aboard
     const { farePoysha } = calculateFare({
       pickupZone: rideRequest.pickupZone,
       destZone: rideRequest.destZone,
@@ -198,7 +218,10 @@ async function attachToPool(poolId, rideRequest) {
     return tx.pool.findUnique({
       where: { id: poolId },
       include: {
-        members: { include: { rideRequest: true, passenger: true } },
+        members: {
+          where: { rideRequest: { status: { not: "CANCELLED" } } },
+          include: { rideRequest: true, passenger: true },
+        },
         tesla: true,
       },
     });
