@@ -21,6 +21,9 @@ const { assertValidTransition } = require("./rideStateMachine");
  * infrastructure.
  */
 async function reserveSeatsAtomically(poolId, seats, capacity) {
+  if (!seats || seats < 1 || seats > capacity) {
+    return false;
+  }
   const rows = await prisma.$queryRawUnsafe(
     `UPDATE "Pool"
      SET "seatsOccupied" = "seatsOccupied" + $1, "version" = "version" + 1
@@ -41,7 +44,13 @@ async function reserveSeatsAtomically(poolId, seats, capacity) {
 async function findCompatibleOpenPool(rideRequest) {
   const openPools = await prisma.pool.findMany({
     where: { status: { in: ["REQUESTED", "MATCHED"] } },
-    include: { tesla: true, members: { include: { rideRequest: true } } },
+    include: {
+      tesla: true,
+      members: {
+        where: { rideRequest: { status: { not: "CANCELLED" } } },
+        include: { rideRequest: true },
+      },
+    },
   });
 
   for (const pool of openPools) {
@@ -58,7 +67,15 @@ async function findCompatibleOpenPool(rideRequest) {
 
 async function findAvailableTesla(excludeTeslaIds = []) {
   return prisma.tesla.findFirst({
-    where: { isOnline: true, id: { notIn: excludeTeslaIds } },
+    where: {
+      isOnline: true,
+      id: { notIn: excludeTeslaIds },
+      pools: {
+        none: {
+          status: { in: ["REQUESTED", "MATCHED", "DRIVER_ARRIVED", "STARTED"] },
+        },
+      },
+    },
   });
 }
 
@@ -70,6 +87,12 @@ async function findAvailableTesla(excludeTeslaIds = []) {
  * pool discount as soon as a second rider joins.
  */
 async function matchRideRequest(rideRequest) {
+  if (!rideRequest.seats || rideRequest.seats < 1) {
+    const err = new Error("Invalid seats requested: must be at least 1");
+    err.status = 400;
+    throw err;
+  }
+
   const failedPoolIds = [];
 
   // Try existing pools first, retrying on lost races (another request grabbed the seat).
@@ -96,6 +119,13 @@ async function matchRideRequest(rideRequest) {
   if (!tesla) {
     const err = new Error("No online Tesla available right now");
     err.status = 503;
+    throw err;
+  }
+  if (rideRequest.seats > tesla.capacity) {
+    const err = new Error(
+      `Requested seats (${rideRequest.seats}) exceed vehicle capacity (${tesla.capacity})`,
+    );
+    err.status = 400;
     throw err;
   }
 
@@ -126,10 +156,16 @@ async function attachToPool(poolId, rideRequest) {
   return prisma.$transaction(async (tx) => {
     const pool = await tx.pool.findUnique({
       where: { id: poolId },
-      include: { members: { include: { rideRequest: true } }, tesla: true },
+      include: {
+        members: {
+          where: { rideRequest: { status: { not: "CANCELLED" } } },
+          include: { rideRequest: true },
+        },
+        tesla: true,
+      },
     });
 
-    const isPooled = pool.members.length >= 1; // at least one other passenger already aboard
+    const isPooled = pool.members.length >= 1; // at least one other active passenger already aboard
     const { farePoysha } = calculateFare({
       pickupZone: rideRequest.pickupZone,
       destZone: rideRequest.destZone,
@@ -182,7 +218,10 @@ async function attachToPool(poolId, rideRequest) {
     return tx.pool.findUnique({
       where: { id: poolId },
       include: {
-        members: { include: { rideRequest: true, passenger: true } },
+        members: {
+          where: { rideRequest: { status: { not: "CANCELLED" } } },
+          include: { rideRequest: true, passenger: true },
+        },
         tesla: true,
       },
     });
@@ -252,11 +291,7 @@ async function cancelRideRequest(rideRequestId, passengerId) {
       err.status = 403;
       throw err;
     }
-    if (!["REQUESTED", "MATCHED", "DRIVER_ARRIVED"].includes(rr.status)) {
-      const err = new Error(`Cannot cancel a ride in status ${rr.status}`);
-      err.status = 409;
-      throw err;
-    }
+    assertValidTransition(rr.status, "CANCELLED");
 
     await tx.rideRequest.update({
       where: { id: rideRequestId },

@@ -1,3 +1,4 @@
+const path = require("path");
 const swaggerJsdoc = require("swagger-jsdoc");
 
 const options = {
@@ -7,7 +8,7 @@ const options = {
       title: "Dhaka Tesla Pool API",
       version: "1.0.0",
       description:
-        "Ride-pooling MVP for Dhaka's fleet of unaffiliated three-seat electric rickshaws (\"Teslas\"). " +
+        'Ride-pooling MVP for Dhaka\'s fleet of unaffiliated three-seat electric rickshaws ("Teslas"). ' +
         "Try it with the seeded cast: Jashim (driver of Bullet), Nusrat, Rafiq, Shirin.",
     },
     servers: [{ url: "/", description: "Current host" }],
@@ -17,7 +18,7 @@ const options = {
       },
     },
   },
-  apis: ["./src/routes/*.js"],
+  apis: [path.join(__dirname, "../routes/*.js"), "./src/routes/*.js"],
 };
 
 module.exports = swaggerJsdoc(options);

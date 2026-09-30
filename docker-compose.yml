@@ -19,9 +19,15 @@ services:
   api:
     build: ./backend
     restart: unless-stopped
-    env_file: ./backend/.env
+    env_file:
+      - path: ./backend/.env
+        required: false
     environment:
       DATABASE_URL: postgresql://tesla:tesla@db:5432/dhaka_tesla_pool?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-real-deployments}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      PORT: 4000
+      NODE_ENV: development
     ports:
       - "4000:4000"
     depends_on:
